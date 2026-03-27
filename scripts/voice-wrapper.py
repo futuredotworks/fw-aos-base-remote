@@ -28,11 +28,15 @@ TMUX_SESSION = "claude"
 app = FastAPI()
 
 
-def get_tailscale_ip():
+def get_bind_ip():
+    """Get bind IP from env var (set by start script), fall back to Tailscale, then localhost."""
+    ip = os.environ.get("BIND_IP")
+    if ip:
+        return ip
     result = subprocess.run(
         [TAILSCALE, "ip", "-4"], capture_output=True, text=True
     )
-    return result.stdout.strip()
+    return result.stdout.strip() or "127.0.0.1"
 
 
 class TextInput(BaseModel):
@@ -45,7 +49,7 @@ class KeyInput(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    ip = get_tailscale_ip()
+    ip = get_bind_ip()
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -477,7 +481,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
-    ip = get_tailscale_ip()
+    ip = get_bind_ip()
     print(f"Voice wrapper: http://{ip}:{WRAPPER_PORT}")
     print(f"Terminal (ttyd): http://{ip}:{TTYD_PORT}")
     uvicorn.run(app, host=ip, port=WRAPPER_PORT)

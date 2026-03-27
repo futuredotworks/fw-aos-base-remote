@@ -1,4 +1,6 @@
 .env
+.venv/
 logs/
 .DS_Store
 threads-posts.md
+__pycache__/
